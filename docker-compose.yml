@@ -1,0 +1,32 @@
+services:
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
+  checkin-agent:
+    build:
+      context: ./agent-go
+    environment:
+      NATS_URL: nats://nats:4222
+      AGENT_ID: checkin-agent
+    depends_on:
+      - nats
+    volumes:
+      - ./logs:/app/logs
+
+  api:
+    build:
+      context: ./orchestrator
+    environment:
+      NATS_URL: nats://nats:4222
+    ports:
+      - "8000:8000"
+    depends_on:
+      - nats
+      - checkin-agent
+    volumes:
+      - ./logs:/app/logs
+
